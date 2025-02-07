@@ -369,4 +369,235 @@ Add the following entry for a daily scan:
 
 ---
 
-These advanced examples should give you the flexibility to tailor Nikto for specific, real-world scenarios. Let me know if you need more insights or assistance!
+Here are even **more advanced examples** to push Nikto's capabilities further in real-world, edge-case, or highly targeted use cases.
+
+---
+
+### **1. Combining Nikto with Nmap**
+Use Nmap to identify open ports and feed the results to Nikto for scanning.
+
+#### Step 1: Run Nmap to find open ports:
+```bash
+nmap -p 80,443,8080 -iL targets.txt -oG nmap_output.txt
+```
+
+#### Step 2: Extract targets from Nmap output:
+```bash
+grep open nmap_output.txt | awk '{print $2":"$3}' | sed 's/\/open//' > nikto_targets.txt
+```
+
+#### Step 3: Use the extracted targets with Nikto:
+```bash
+nikto -h nikto_targets.txt
+```
+
+---
+
+### **2. Recursive Scanning**
+Use Nikto to recursively scan links found during a scan.
+
+1. Enable the `-FollowRedirects` option:
+   ```bash
+   nikto -h http://example.com -FollowRedirects
+   ```
+
+2. Combine with a spider tool like `wget` or `Burp Suite` to identify additional endpoints, then scan those endpoints:
+   ```bash
+   wget --spider -r -l 2 -o wget.log http://example.com
+   grep "http" wget.log | awk '{print $3}' > additional_urls.txt
+   nikto -h additional_urls.txt
+   ```
+
+---
+
+### **3. Customized Payload Injection**
+Run Nikto with custom payloads to test for vulnerabilities like SQL injection, LFI, or XSS.
+
+#### SQL Injection Example:
+Create a list of SQL payloads in a text file (`sql_payloads.txt`):
+```plaintext
+?id=1'
+?id=1' OR '1'='1
+?id=1 AND 1=1
+```
+
+Run Nikto using `sql_payloads.txt`:
+```bash
+nikto -h http://example.com -mutate 4 -idfile sql_payloads.txt
+```
+
+---
+
+### **4. Advanced Tuning for Multi-Vulnerability Scans**
+Perform simultaneous scans for **multiple categories** with precise control:
+```bash
+nikto -h http://example.com -Tuning 0,1,3,4,6 -Plugins headers,cookies -ssl -v
+```
+This scans for:
+- File/CGI issues (`0`),
+- Interesting files (`1`),
+- XSS (`3`),
+- SQL injection (`4`),
+- DoS (`6`).
+
+It uses only the `headers` and `cookies` plugins.
+
+---
+
+### **5. Scan Hidden Directories and Files**
+Combine Nikto with `gobuster` or `dirb` to discover hidden files or directories before scanning them with Nikto.
+
+#### Step 1: Use Gobuster to discover hidden files:
+```bash
+gobuster dir -u http://example.com -w /usr/share/wordlists/dirb/common.txt -o gobuster_output.txt
+```
+
+#### Step 2: Extract URLs and scan them with Nikto:
+```bash
+awk '{print $1}' gobuster_output.txt > urls_to_scan.txt
+nikto -h urls_to_scan.txt
+```
+
+---
+
+### **6. Header Manipulation Attacks**
+Nikto can test for vulnerabilities in HTTP headers.
+
+#### Example: Host Header Injection
+Run a scan with a malicious `Host` header:
+```bash
+nikto -h http://example.com -useragent "Host: malicious.com"
+```
+
+#### Example: HTTP Verb Tampering
+Check for vulnerabilities in uncommon HTTP methods:
+```bash
+nikto -h http://example.com -method DELETE
+```
+
+---
+
+### **7. Advanced Proxy Configurations**
+Scan through a proxy with fine-grained control.
+
+#### Proxy with Authentication:
+```bash
+nikto -h http://example.com -useproxy http://user:password@proxy.example:8080
+```
+
+#### Proxychains for Tor:
+Set up `proxychains` to route Nikto requests through Tor:
+1. Install and configure `proxychains` and `tor`.
+2. Run Nikto through `proxychains`:
+   ```bash
+   proxychains nikto -h http://example.com
+   ```
+
+---
+
+### **8. Rate-Limiting Evasion**
+Bypass rate-limiting systems with randomized requests:
+```bash
+nikto -h http://example.com -randomize -pause 15
+```
+
+- `-randomize`: Sends requests in a random order.
+- `-pause`: Introduces a 15-second delay between requests.
+
+---
+
+### **9. Cross-Site Scripting (XSS) Detection**
+Manually inject XSS payloads and use Nikto to automate the detection:
+```bash
+nikto -h http://example.com/search?q="<script>alert('XSS')</script>"
+```
+
+---
+
+### **10. File Upload Vulnerability Testing**
+Test for upload vulnerabilities by scanning directories commonly used for uploads:
+```bash
+nikto -h http://example.com -Cgidirs /uploads,/files,/tmp
+```
+
+---
+
+### **11. Customized Headers and Cookies**
+Add advanced headers for testing or bypassing protections:
+```bash
+nikto -h http://example.com -C "Authorization: Bearer TOKEN" -useragent "Custom-Agent"
+```
+
+---
+
+### **12. Evading WAFs (Web Application Firewalls)**
+Nikto doesn't have built-in WAF bypass techniques but can integrate with tools like `wafw00f` or `Burp Suite`. For example:
+
+#### Step 1: Detect the WAF:
+```bash
+wafw00f http://example.com
+```
+
+#### Step 2: Configure Nikto with headers or delay techniques to bypass:
+```bash
+nikto -h http://example.com -pause 10 -useragent "Random-Agent"
+```
+
+---
+
+### **13. DNS Enumeration and Virtual Hosts**
+Enumerate virtual hosts on a server and scan each:
+```bash
+nmap --script dns-brute -p 80,443 example.com
+```
+
+Extract subdomains from the results and feed them to Nikto:
+```bash
+nikto -h subdomains.txt
+```
+
+---
+
+### **14. Custom Exploitation with Nikto Results**
+Export Nikto results and use other tools for follow-up exploitation.
+
+#### Save results in JSON:
+```bash
+nikto -h http://example.com -o results.json -Format json
+```
+
+#### Parse JSON for critical findings:
+Use Python or other scripts to extract specific issues from the JSON file:
+```python
+import json
+
+with open('results.json') as f:
+    data = json.load(f)
+    for item in data['vulnerabilities']:
+        print(f"Vulnerability: {item['name']}, URL: {item['url']}")
+```
+
+---
+
+### **15. Multi-Layer Automation**
+Automate a pipeline that integrates Nikto with other tools like `Nmap`, `Metasploit`, or `Burp Suite`.
+
+Example Bash Script:
+```bash
+#!/bin/bash
+
+# Step 1: Run Nmap for open ports
+nmap -p 80,443 -iL targets.txt -oG nmap_results.txt
+
+# Step 2: Extract live hosts
+grep open nmap_results.txt | awk '{print $2}' > live_hosts.txt
+
+# Step 3: Run Nikto
+while read host; do
+  nikto -h $host -o nikto_results_$host.html -Format html
+done < live_hosts.txt
+```
+
+---
+
+These examples aim to maximize Nikto's potential by combining it with other tools, scripts, and advanced options for real-world penetration testing. Let me know if you have a specific use case in mind!
