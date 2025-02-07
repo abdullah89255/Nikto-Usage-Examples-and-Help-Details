@@ -600,4 +600,248 @@ done < live_hosts.txt
 
 ---
 
-These examples aim to maximize Nikto's potential by combining it with other tools, scripts, and advanced options for real-world penetration testing. Let me know if you have a specific use case in mind!
+Here are **even more advanced examples and strategies** for leveraging Nikto in complex and real-world penetration testing scenarios.
+
+---
+
+### **1. Chain Nikto with Advanced Recon Tools**
+Combine Nikto with tools like **Amass**, **Subfinder**, or **Nmap** to target all possible attack surfaces.
+
+#### Step 1: Find Subdomains with Amass:
+```bash
+amass enum -d example.com -o subdomains.txt
+```
+
+#### Step 2: Resolve Subdomains with Massdns:
+```bash
+massdns -r resolvers.txt -t A -o S -w resolved.txt subdomains.txt
+```
+
+#### Step 3: Use Nikto on Resolved Domains:
+```bash
+cat resolved.txt | cut -d " " -f1 > domains.txt
+nikto -h domains.txt -o full_scan_results.txt
+```
+
+---
+
+### **2. Cross-Protocol Scanning**
+Nikto supports multiple protocols like HTTP, HTTPS, and FTP. Use these to target services beyond basic web applications.
+
+#### Example: FTP Banner Grabbing
+```bash
+nikto -h ftp://example.com
+```
+
+#### Example: HTTP on Custom Protocols
+Target unusual services running HTTP:
+```bash
+nikto -h http://example.com -p 5985  # HTTP over WinRM
+```
+
+---
+
+### **3. Multi-Port and Protocol Scans**
+Scan multiple ports and protocols in a single command:
+```bash
+nikto -h http://example.com -p 80,443,8080,8443 -ssl
+```
+
+---
+
+### **4. Inject Payloads for Manual Verification**
+Manually create payloads for SQLi, XSS, or RCE, and automate with Nikto.
+
+#### Example: SQL Injection Payloads
+Prepare a file, `sqli_payloads.txt`:
+```plaintext
+?id=1'
+?id=1 AND 1=1
+?id=1' UNION SELECT 1,2,3--
+```
+
+Run Nikto with the payloads:
+```bash
+nikto -h http://example.com -mutate 4 -idfile sqli_payloads.txt
+```
+
+---
+
+### **5. Analyze Web Application Misconfigurations**
+Use Nikto's **plugins** and **tuning** options for specific configuration checks.
+
+#### Example: Misconfigured Headers
+```bash
+nikto -h http://example.com -Plugins headers,cookies
+```
+
+#### Example: Directory Listing Enabled
+Check common misconfigured directories:
+```bash
+nikto -h http://example.com -Cgidirs /images,/backup,/private
+```
+
+---
+
+### **6. Use Nikto for API Endpoint Testing**
+Test RESTful APIs for misconfigurations or vulnerabilities.
+
+#### Example: API Endpoints with Auth Tokens
+```bash
+nikto -h http://api.example.com -C "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+#### Example: Test Hidden API Endpoints
+Feed Nikto with a list of API endpoints:
+```bash
+nikto -h api_endpoints.txt
+```
+
+---
+
+### **7. Target Server-Side Injection Points**
+Focus on potential injection points by limiting to specific tests.
+
+#### Example: Command Injection
+```bash
+nikto -h http://example.com -Tuning 4 -Plugins commands
+```
+
+#### Example: Local File Inclusion (LFI)
+```bash
+nikto -h http://example.com -findonly .php,.inc,.conf
+```
+
+---
+
+### **8. Escalate Findings with Exploit Frameworks**
+Integrate Nikto's findings with **Metasploit** or **Burp Suite**.
+
+#### Metasploit Integration
+1. Save Nikto results as XML:
+   ```bash
+   nikto -h http://example.com -o results.xml -Format xml
+   ```
+2. Import into Metasploit:
+   ```bash
+   msfconsole
+   db_import results.xml
+   ```
+
+#### Burp Suite Workflow
+- Export Nikto findings into a file:
+  ```bash
+  nikto -h http://example.com -o findings.txt
+  ```
+- Use the findings to create a custom Burp Intruder payload.
+
+---
+
+### **9. Nikto on Obfuscated/Hidden Services**
+Target non-standard web services.
+
+#### Example: Services Running on Non-Standard Ports
+```bash
+nikto -h http://192.168.1.1 -p 8080,8443
+```
+
+#### Example: Scan Services Exposed via SSH Tunneling
+```bash
+ssh -L 8080:localhost:80 user@remote-server
+nikto -h http://127.0.0.1:8080
+```
+
+---
+
+### **10. Detect WAF and Bypass Protections**
+#### Step 1: Detect WAF with WAFW00F
+```bash
+wafw00f http://example.com
+```
+
+#### Step 2: Evade WAF with Nikto
+- Use a custom **User-Agent** string:
+  ```bash
+  nikto -h http://example.com -useragent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+  ```
+
+- Introduce delays and randomize:
+  ```bash
+  nikto -h http://example.com -pause 10 -randomize
+  ```
+
+---
+
+### **11. Automated Reporting Pipeline**
+#### Step 1: Schedule Regular Scans
+Create a cron job for automated scans:
+```bash
+crontab -e
+```
+
+Add the following:
+```bash
+0 2 * * * nikto -h http://example.com -o /path/to/reports/scan_$(date +\%F).html -Format html
+```
+
+#### Step 2: Send Reports via Email
+Use a script to email reports after the scan:
+```bash
+#!/bin/bash
+nikto -h http://example.com -o /reports/scan_$(date +%F).html -Format html
+mail -s "Nikto Scan Report" user@example.com < /reports/scan_$(date +%F).html
+```
+
+---
+
+### **12. Test Advanced HTTP Methods**
+Check for vulnerabilities in non-standard HTTP methods like `TRACE`, `OPTIONS`, or `PUT`.
+
+#### Example: TRACE Method Vulnerability
+```bash
+nikto -h http://example.com -method TRACE
+```
+
+#### Example: Test PUT Method for Arbitrary File Upload
+```bash
+nikto -h http://example.com -method PUT -upload /path/to/file.txt
+```
+
+---
+
+### **13. Detect Old or Deprecated Protocols**
+Scan for deprecated SSL/TLS versions:
+```bash
+nikto -h https://example.com -ssl
+```
+
+---
+
+### **14. Blind Testing of Custom Ports**
+If you suspect web services on unusual ports:
+```bash
+nikto -h 192.168.1.1 -p 8081,8444,9090
+```
+
+---
+
+### **15. Comprehensive Multi-Step Attack Simulation**
+Automate reconnaissance, scanning, and reporting:
+```bash
+#!/bin/bash
+
+# Step 1: Discover open ports
+nmap -p 80,443,8080 -iL targets.txt -oG nmap_output.txt
+
+# Step 2: Extract live hosts
+grep open nmap_output.txt | awk '{print $2":"$3}' | sed 's/\/open//' > nikto_targets.txt
+
+# Step 3: Run Nikto for each target
+while read target; do
+    nikto -h $target -o /reports/nikto_$target.html -Format html
+done < nikto_targets.txt
+```
+
+---
+
+These examples explore advanced techniques to maximize Nikto’s effectiveness in penetration tests and real-world assessments. Let me know if you want custom examples tailored to a specific attack scenario or environment!
