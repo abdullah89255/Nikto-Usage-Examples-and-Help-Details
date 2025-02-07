@@ -161,4 +161,212 @@ nikto -update
 
 ---
 
-Let me know if you need more tailored examples or specific guidance!
+Here are some **advanced Nikto usage examples** for scenarios where more precise or sophisticated scanning techniques are required.
+
+---
+
+### **1. Full Scan with Multiple Options**
+Perform a detailed scan with specific options enabled:
+```bash
+nikto -h http://example.com -p 443 -ssl -o full_scan.html -Format html -v
+```
+This performs:
+- A scan on port `443` (HTTPS).
+- Saves the output in an HTML file.
+- Enables verbose output for detailed logs.
+
+---
+
+### **2. Scan with Authentication**
+Perform a scan using **Basic Authentication** credentials:
+```bash
+nikto -h http://example.com -id username:password
+```
+
+#### Using Cookies for Session-Based Authentication:
+If the website uses cookies for session tracking, you can include the cookie:
+```bash
+nikto -h http://example.com -C "PHPSESSID=abc123; logged_in=true"
+```
+
+---
+
+### **3. Host Header Injection Scan**
+Scan for vulnerabilities related to Host Header Injection:
+```bash
+nikto -h http://example.com -useragent "Host: evil.com"
+```
+
+---
+
+### **4. Scan Behind a Proxy with Credentials**
+If you need to scan through a proxy that requires authentication:
+```bash
+nikto -h http://example.com -useproxy http://proxyuser:proxypass@proxy.example.com:8080
+```
+
+---
+
+### **5. Test Specific Plugins**
+Run a scan with only specific plugins enabled (e.g., testing headers and cookies):
+```bash
+nikto -h http://example.com -Plugins headers,cookies
+```
+
+---
+
+### **6. Advanced Tuning for Vulnerability Categories**
+Scan for specific vulnerability types. For example:
+- **Files** and **CGI** checks (`0`).
+- **Injection flaws** like SQL or command injection (`4`).
+- **XSS vulnerabilities** (`3`).
+
+Example:
+```bash
+nikto -h http://example.com -Tuning 0,3,4
+```
+
+#### Exclude Certain Categories:
+Exclude scanning for XSS (`3`) and remote file inclusion (`5`):
+```bash
+nikto -h http://example.com -Tuning -x 3,5
+```
+
+---
+
+### **7. Evade IDS/IPS with Throttling**
+Introduce random delays to evade detection systems:
+```bash
+nikto -h http://example.com -pause 10
+```
+This introduces a **10-second delay** between requests.
+
+#### Randomized Delay:
+```bash
+nikto -h http://example.com -randomize
+```
+
+---
+
+### **8. Use Custom Configurations**
+Specify a custom configuration file for specialized scans:
+```bash
+nikto -config /path/to/custom.conf -h http://example.com
+```
+
+---
+
+### **9. Multiple Host Scanning with Ports**
+Scan a file of multiple hosts with specific ports:
+```bash
+nikto -h targets.txt -p 80,443,8080
+```
+
+Where `targets.txt` contains:
+```
+http://example1.com
+http://example2.com
+192.168.1.10
+```
+
+---
+
+### **10. Blind Injection Testing**
+For blind SQL injection or command injection, use specific tuning (`4`) and verbose output:
+```bash
+nikto -h http://example.com -Tuning 4 -v
+```
+
+---
+
+### **11. Scan for Specific File Extensions**
+Target specific file types (e.g., `.php` and `.asp`):
+```bash
+nikto -h http://example.com -findonly .php,.asp
+```
+
+---
+
+### **12. Analyze Specific HTTP Methods**
+Check for vulnerabilities in HTTP methods like `PUT`, `DELETE`, or `TRACE`:
+```bash
+nikto -h http://example.com -method PUT
+```
+
+---
+
+### **13. Running Nikto in Docker**
+If you prefer running Nikto in a containerized environment:
+1. Pull the Nikto Docker image:
+   ```bash
+   docker pull sullo/nikto
+   ```
+2. Run Nikto in a container:
+   ```bash
+   docker run --rm sullo/nikto -h http://example.com
+   ```
+
+---
+
+### **14. Scan for Specific Directories**
+Focus on particular directories, such as `/admin` or `/cgi-bin`:
+```bash
+nikto -h http://example.com -Cgidirs /admin,/cgi-bin
+```
+
+---
+
+### **15. Debug Mode for Troubleshooting**
+If you suspect issues during the scan, use debug mode:
+```bash
+nikto -h http://example.com -d
+```
+
+---
+
+### **16. Integrate with Metasploit**
+Combine Nikto results with Metasploit for further exploitation:
+1. Save the scan results as a Nmap-compatible file:
+   ```bash
+   nikto -h http://example.com -o nmap_results.xml -Format xml
+   ```
+2. Import the results into Metasploit:
+   ```bash
+   msfconsole
+   db_import nmap_results.xml
+   ```
+
+---
+
+### **17. Advanced SSL Analysis**
+Perform an in-depth SSL/TLS analysis of the target:
+```bash
+nikto -h https://example.com -ssl
+```
+
+---
+
+### **18. Exploit Specific Issues**
+If Nikto identifies specific vulnerabilities, you can combine it with other tools, like `curl` or custom scripts, to verify or exploit those findings.
+
+#### Example: Exploiting a File Upload Vulnerability
+If Nikto identifies a vulnerable upload endpoint:
+```bash
+curl -X POST -F "file=@malicious.php" http://example.com/uploads/
+```
+
+---
+
+### **19. Automated Reporting**
+Schedule Nikto scans and generate reports regularly using `cron`:
+```bash
+crontab -e
+```
+Add the following entry for a daily scan:
+```bash
+0 3 * * * /usr/bin/nikto -h http://example.com -o /reports/scan_$(date +\%F).html -Format html
+```
+
+---
+
+These advanced examples should give you the flexibility to tailor Nikto for specific, real-world scenarios. Let me know if you need more insights or assistance!
